@@ -32,6 +32,11 @@ let s:mysql = {
       \ 'Primary Keys': "SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '{schema}' AND TABLE_NAME = '{table}' AND CONSTRAINT_TYPE = 'PRIMARY KEY'",
       \ }
 
+let s:hdbsql = {
+      \ 'List': 'SELECT * from {optional_schema}"{table}" LIMIT 1000',
+      \ 'Columns': "SELECT distinct * from table_columns where schema_name = '{schema}' and table_name = '{table}'"
+  \ }
+
 let s:oracle_from = "
       \FROM all_constraints N\n
       \JOIN all_cons_columns L\n\t
@@ -177,6 +182,7 @@ let s:sqlserver = {
 let s:helpers = {
       \ 'postgresql': s:postgres,
       \ 'mysql': s:mysql,
+      \ 'hdbsql': s:hdbsql,
       \ 'oracle': s:oracle,
       \ 'sqlite': s:sqlite,
       \ 'sqlserver': s:sqlserver,

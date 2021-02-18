@@ -13,6 +13,23 @@ function! s:results_parser(results, delimiter, min_len) abort
   return filter(mapped,'len(v:val) ==? '.min_len)
 endfunction
 
+function! Hana_scheme_parser(results, delimiter, min_len) abort
+  let unquoted_results =  map(a:results[1:-3], {_, row ->substitute(row, '"', '', 'g') })
+    if a:min_len ==? 1
+    return filter(unquoted_results, '!empty(trim(v:val))')
+  endif
+  let mapped = map(unquoted_results, {_,row -> filter(split(row, a:delimiter), '!empty(trim(v:val))')})
+  if a:min_len > 1
+    return filter(mapped, 'len(v:val) ==? '.a:min_len)
+  endif
+
+  let counts = map(copy(mapped), 'len(v:val)')
+  let min_len = max(counts)
+
+  return filter(mapped,'len(v:val) ==? '.min_len)
+
+endfunction
+
 let s:postgres_foreign_key_query = "
       \ SELECT ccu.table_name AS foreign_table_name, ccu.column_name AS foreign_column_name, ccu.table_schema as foreign_table_schema
       \ FROM
@@ -93,6 +110,15 @@ let s:mysql = {
       \ 'quote': 0,
       \ }
 
+let s:hdbsql_args = '-j "%s"'
+let s:hdbsql = {
+      \ 'args': s:hdbsql_args,
+      \ 'schemes_query': printf(s:hdbsql_args, 'select distinct schema_name from m_tables'),
+      \ 'schemes_tables_query': printf(s:hdbsql_args, 'select distinct schema_name as table_schema, table_name from m_tables'),
+      \ 'parse_results': {results,min_len -> Hana_scheme_parser(results, ',', min_len)},
+      \ 'quote': 1,
+  \ }
+
 let s:oracle_args = join(
       \    [
            \  'SET linesize 4000',
@@ -141,6 +167,7 @@ let s:schemas = {
       \ 'sqlserver': s:sqlserver,
       \ 'mysql': s:mysql,
       \ 'oracle': s:oracle,
+      \ 'hdbsql': s:hdbsql
       \ }
 
 if !exists('g:db_adapter_postgres')
